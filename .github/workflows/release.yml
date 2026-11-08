@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    name: Build & Release
+    name: Build binaries
     runs-on: ubuntu-latest
 
     strategy:
@@ -18,34 +18,27 @@ jobs:
         include:
           - goos: windows
             goarch: amd64
-            ext: .exe
             name: sharedrop-windows-amd64.exe
           - goos: windows
             goarch: arm64
-            ext: .exe
             name: sharedrop-windows-arm64.exe
           - goos: linux
             goarch: amd64
-            ext: ''
             name: sharedrop-linux-amd64
           - goos: linux
             goarch: arm64
-            ext: ''
             name: sharedrop-linux-arm64
           - goos: darwin
             goarch: amd64
-            ext: ''
             name: sharedrop-darwin-amd64
           - goos: darwin
             goarch: arm64
-            ext: ''
             name: sharedrop-darwin-arm64
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
 
@@ -55,13 +48,13 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
+          mkdir -p dist
           go build \
             -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
             -o dist/${{ matrix.name }} \
             ./
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
           path: dist/${{ matrix.name }}
@@ -74,46 +67,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: dist/
           merge-multiple: true
 
-      - name: Generate checksums
-        run: |
-          cd dist
-          sha256sum * > checksums.txt
-          cat checksums.txt
+      - name: Checksums
+        run: cd dist && sha256sum * > checksums.txt
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
           name: "ShareDrop ${{ github.ref_name }}"
           body: |
-            ## 📦 ShareDrop ${{ github.ref_name }}
+            ## ShareDrop ${{ github.ref_name }}
 
-            Local network file sharing, done right.
+            Local network file sharing — single binary, no setup.
 
-            ### Installation
+            ### Quick install
 
-            Download the binary for your platform below, make it executable, and run it:
-
-            ```bash
-            # Linux / macOS
-            chmod +x sharedrop-*
-            ./sharedrop-linux-amd64
-
-            # Windows — just double-click or run in terminal
-            sharedrop-windows-amd64.exe
+            **Windows** (PowerShell):
+            ```powershell
+            .\sharedrop-windows-amd64.exe install
+            sharedrop
             ```
 
-            ### What's new
-            See [CHANGELOG.md](CHANGELOG.md) for details.
+            **Linux / macOS**:
+            ```bash
+            chmod +x sharedrop-linux-amd64
+            sudo mv sharedrop-linux-amd64 /usr/local/bin/sharedrop
+            sharedrop install
+            sharedrop
+            ```
+
+            ### Features
+            - Web UI with dark/light mode
+            - QR code in terminal for mobile access
+            - Upload progress bar
+            - Password protection
+            - Drag & drop upload
+            - Filesystem root browsing (`--root`)
+            - Self-install to PATH (`install` command)
 
             ### Checksums
-            See `checksums.txt` for SHA-256 hashes.
-          files: |
-            dist/*
+            See `checksums.txt`
+          files: dist/*
           draft: false
           prerelease: false

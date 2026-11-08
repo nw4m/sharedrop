@@ -7,13 +7,15 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/user/sharedrop/internal/config"
-	"github.com/user/sharedrop/internal/discovery"
-	"github.com/user/sharedrop/internal/server"
-	"github.com/user/sharedrop/internal/ui"
+	qrcode "github.com/skip2/go-qrcode"
+	"github.com/nw4m/sharedrop/internal/config"
+	"github.com/nw4m/sharedrop/internal/discovery"
+	"github.com/nw4m/sharedrop/internal/server"
+	"github.com/nw4m/sharedrop/internal/ui"
 )
 
 func startServer(cfg *config.Config, shareDir string) error {
@@ -36,6 +38,10 @@ func startServer(cfg *config.Config, shareDir string) error {
 
 	// show share info box
 	ui.PrintShareInfo(urls, shareDir, cfg.PasswordSet)
+
+	// print QR code for the primary URL
+	primaryURL := discovery.GetShareURL(discovery.GetPrimaryIP(), cfg.DefaultPort)
+	printQR(primaryURL)
 
 	httpServer := &http.Server{
 		Addr:         addr,
@@ -79,4 +85,76 @@ func startServer(cfg *config.Config, shareDir string) error {
 	}
 
 	return nil
+}
+
+// printQR renders a QR code for the given URL directly in the terminal
+// uses Unicode half-block characters so it works on Windows PowerShell too
+func printQR(url string) {
+	qr, err := qrcode.New(url, qrcode.Medium)
+	if err != nil {
+		return
+	}
+
+	bmp := qr.Bitmap()
+
+	fmt.Println()
+	fmt.Println("  Scan to open on your phone:")
+	fmt.Println()
+
+	// render two rows at a time using half-block chars
+	// ▀ = top filled, bottom empty
+	// ▄ = top empty, bottom filled
+	// █ = both filled
+	// ' ' = both empty
+	// add 2-cell quiet zone on each side
+	quiet := 2
+
+	// top quiet zone rows
+	for i := 0; i < quiet; i++ {
+		line := "  "
+		for j := 0; j < len(bmp[0])+quiet*2; j++ {
+			line += " "
+		}
+		fmt.Println(line)
+	}
+
+	// process bitmap rows in pairs
+	for row := 0; row < len(bmp); row += 2 {
+		line := "  " + strings.Repeat(" ", quiet) // left quiet zone
+
+		for col := 0; col < len(bmp[row]); col++ {
+			top := bmp[row][col]
+			// handle odd number of rows
+			bot := false
+			if row+1 < len(bmp) {
+				bot = bmp[row+1][col]
+			}
+
+			switch {
+			case top && bot:
+				line += "█"
+			case top && !bot:
+				line += "▀"
+			case !top && bot:
+				line += "▄"
+			default:
+				line += " "
+			}
+		}
+
+		line += strings.Repeat(" ", quiet) // right quiet zone
+		fmt.Println(line)
+	}
+
+	// bottom quiet zone
+	for i := 0; i < quiet/2; i++ {
+		line := "  "
+		for j := 0; j < len(bmp[0])+quiet*2; j++ {
+			line += " "
+		}
+		fmt.Println(line)
+	}
+
+	fmt.Println()
+	fmt.Printf("  %s\n\n", url)
 }

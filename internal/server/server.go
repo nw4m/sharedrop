@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/user/sharedrop/internal/auth"
-	"github.com/user/sharedrop/internal/config"
+	"github.com/nw4m/sharedrop/internal/auth"
+	"github.com/nw4m/sharedrop/internal/config"
 )
 
 // FileInfo is what we send to the HTML template

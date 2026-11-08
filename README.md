@@ -1,46 +1,54 @@
-# 📦 ShareDrop
+# ShareDrop
 
-> Local network file sharing, done right.
-
-ShareDrop is a fast, beautiful CLI tool written in Go that lets you share files between devices on your local network — no cloud, no accounts, no setup hassle.
+Local network file sharing, done right. Single binary, no setup, works on every device on your WiFi.
 
 ## Features
 
-- 🌐 **Web UI** — browse, download, and upload files from any browser on your network
-- 🔒 **Password protection** — optional password stored locally with bcrypt hashing
-- ⬆️ **Drag & drop upload** — upload files directly from the browser
-- 🗜️ **ZIP download** — download entire folders as a single ZIP
-- 🔍 **Live search** — filter files instantly in the browser
-- 📱 **Mobile friendly** — responsive layout works on phones too
-- 🎨 **Beautiful CLI** — colorful terminal output with ASCII art banner
-- 🚀 **First-run wizard** — guided setup on first launch
-- ⚙️ **Per-device config** — settings saved in `~/.sharedrop/config.json`
-- 🏃 **Single binary** — no runtime deps, works on Windows, Linux, and macOS
+- Web UI — browse, download, upload, delete, ZIP folders
+- Password protection with bcrypt
+- Dark / Light mode toggle
+- QR code in terminal — scan with your phone instantly
+- Upload progress bar
+- Drag & drop upload
+- Live file search
+- Sort by name, size, date
+- JSON API at `/api/files`
+- Run from filesystem root with `--root`
+- `install` command adds itself to PATH
+- Cross-platform: Windows, Linux, macOS
 
 ## Install
 
-Download the binary for your platform from [Releases](../../releases).
+Download the binary for your platform from [Releases](https://github.com/nw4m/sharedrop/releases).
 
 ```bash
 # Linux / macOS
 chmod +x sharedrop-linux-amd64
-mv sharedrop-linux-amd64 /usr/local/bin/sharedrop
+sudo mv sharedrop-linux-amd64 /usr/local/bin/sharedrop
+sharedrop install
+```
+
+```powershell
+# Windows — run in PowerShell
+.\sharedrop-windows-amd64.exe install
 ```
 
 ## Usage
 
 ```bash
-# Share the current folder
+# Share current folder (first run triggers setup wizard)
 sharedrop
 
 # Share a specific folder
 sharedrop -d /path/to/folder
-sharedrop /path/to/folder
+
+# Share entire filesystem
+sharedrop --root
 
 # Custom port
 sharedrop -p 9000
 
-# Skip password even if one is saved
+# Skip password
 sharedrop --no-password
 ```
 
@@ -48,32 +56,17 @@ sharedrop --no-password
 
 | Command | Description |
 |---|---|
-| `sharedrop` | Start sharing (first run triggers setup wizard) |
-| `sharedrop setup` | Re-run the setup wizard |
-| `sharedrop config` | Show current configuration |
-| `sharedrop passwd` | Set or remove the share password |
-| `sharedrop version` | Show version info |
-
-## Configuration
-
-Config lives at `~/.sharedrop/config.json`. You can edit it manually or use `sharedrop setup`.
-
-```json
-{
-  "password_hash": "...",
-  "password_set": true,
-  "default_port": 8080,
-  "allow_upload": true,
-  "allow_delete": false,
-  "show_hidden": false,
-  "max_upload_mb": 500
-}
-```
+| `sharedrop` | Start sharing |
+| `sharedrop install` | Add to PATH permanently |
+| `sharedrop setup` | Re-run setup wizard |
+| `sharedrop config` | Show current config |
+| `sharedrop passwd` | Change / remove password |
+| `sharedrop version` | Version info |
 
 ## Build from source
 
 ```bash
-git clone https://github.com/user/sharedrop
+git clone https://github.com/nw4m/sharedrop
 cd sharedrop
 go build -o sharedrop ./
 ```

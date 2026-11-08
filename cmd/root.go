@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/user/sharedrop/internal/auth"
-	"github.com/user/sharedrop/internal/config"
-	"github.com/user/sharedrop/internal/ui"
+	"github.com/nw4m/sharedrop/internal/auth"
+	"github.com/nw4m/sharedrop/internal/config"
+	"github.com/nw4m/sharedrop/internal/ui"
 )
 
 var rootCmd = &cobra.Command{
@@ -64,7 +64,7 @@ var versionCmd = &cobra.Command{
 		ui.PrintBanner()
 		ui.Info("ShareDrop v1.0.0")
 		ui.Dim("Built with Go · MIT License")
-		ui.Dim("github.com/user/sharedrop")
+		ui.Dim("github.com/nw4m/sharedrop")
 	},
 }
 

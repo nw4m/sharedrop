@@ -1,4 +1,4 @@
-module github.com/user/sharedrop
+module github.com/nw4m/sharedrop
 
 go 1.27.3
 
