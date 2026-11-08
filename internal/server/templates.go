@@ -7,364 +7,775 @@ const browseTmpl = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ShareDrop</title>
 <style>
-  :root {
-    --bg: #0f0f13;
-    --surface: #1a1a24;
-    --surface2: #22223a;
-    --border: #2e2e4a;
-    --accent: #7c6af7;
-    --accent2: #a78bfa;
-    --text: #e2e0ff;
-    --text2: #9994cc;
-    --green: #4ade80;
-    --red: #f87171;
-    --radius: 10px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    min-height: 100vh;
-  }
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky; top: 0; z-index: 100;
-  }
-  .logo {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--accent2);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    letter-spacing: -0.5px;
-  }
-  .header-actions { display: flex; gap: 10px; align-items: center; }
-  .btn {
-    padding: 7px 16px;
-    border-radius: var(--radius);
-    border: none;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.15s;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .btn-primary { background: var(--accent); color: white; }
-  .btn-primary:hover { background: var(--accent2); }
-  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: var(--border); }
-  .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
-  .breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 20px;
-    font-size: 0.9rem;
-    flex-wrap: wrap;
-  }
-  .breadcrumb a { color: var(--accent2); text-decoration: none; }
-  .breadcrumb a:hover { text-decoration: underline; }
-  .breadcrumb .sep { color: var(--text2); }
-  .toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .search-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 8px 14px;
-    color: var(--text);
-    font-size: 0.9rem;
-    width: 260px;
-    outline: none;
-    transition: border 0.15s;
-  }
-  .search-box:focus { border-color: var(--accent); }
-  .file-table {
-    background: var(--surface);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    overflow: hidden;
-  }
-  table { width: 100%; border-collapse: collapse; }
-  thead tr { background: var(--surface2); }
-  th {
-    padding: 12px 16px;
-    text-align: left;
-    font-size: 0.8rem;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--border);
-  }
-  td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
-  .file-name { display: flex; align-items: center; gap: 10px; }
-  .file-name a { color: var(--text); text-decoration: none; font-weight: 500; }
-  .file-name a:hover { color: var(--accent2); }
-  .file-icon {
-    font-size: 0.72rem;
-    font-weight: 700;
-    font-family: monospace;
-    color: var(--text2);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 2px 5px;
-    border-radius: 4px;
-    min-width: 38px;
-    text-align: center;
-    white-space: nowrap;
-  }
-  .file-size { color: var(--text2); font-size: 0.85rem; white-space: nowrap; }
-  .file-date { color: var(--text2); font-size: 0.85rem; white-space: nowrap; }
-  .file-actions { display: flex; gap: 6px; justify-content: flex-end; }
-  .action-link {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.1s;
-  }
-  .dl { background: #1e3a5f; color: #60a5fa; }
-  .dl:hover { background: #2563eb; color: white; }
-  .zip-link { background: #1e3a5f; color: #818cf8; }
-  .zip-link:hover { background: #4338ca; color: white; }
-  .del { background: #3b1111; color: var(--red); }
-  .del:hover { background: var(--red); color: white; }
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text2);
-    font-size: 0.9rem;
-  }
-  .upload-zone {
-    background: var(--surface);
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 28px;
-    margin-bottom: 20px;
-    transition: all 0.2s;
-  }
-  .upload-zone.dragover { border-color: var(--accent); background: rgba(124,106,247,0.08); }
-  .upload-zone-inner {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .upload-zone label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    color: var(--text2);
-    font-size: 0.9rem;
-  }
-  .upload-zone input[type=file] { display: none; }
-  .upload-zone .file-chosen { color: var(--accent2); font-size: 0.85rem; flex: 1; min-width: 100px; }
-  .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 99px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-  .badge-dir { background: rgba(124,106,247,0.15); color: var(--accent2); }
-  .footer {
-    text-align: center;
-    padding: 20px;
-    color: var(--text2);
-    font-size: 0.82rem;
-    border-top: 1px solid var(--border);
-    margin-top: 40px;
-  }
-  .stats { color: var(--text2); font-size: 0.85rem; }
-  @media (max-width: 600px) {
-    .file-date, .file-size, th:nth-child(2), th:nth-child(3), td:nth-child(2), td:nth-child(3) { display: none; }
-    .container { padding: 12px; }
-    header { padding: 10px 14px; }
-  }
-  .toast {
-    position: fixed; bottom: 24px; right: 24px;
-    background: var(--green); color: #052e16;
-    padding: 10px 20px; border-radius: var(--radius);
-    font-weight: 600; font-size: 0.9rem;
-    opacity: 0; transform: translateY(20px);
-    transition: all 0.3s; z-index: 999;
-    pointer-events: none;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
+/* ---- reset & base ---- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #09090b;
+  --bg1:      #111113;
+  --bg2:      #18181b;
+  --bg3:      #27272a;
+  --border:   #3f3f46;
+  --border2:  #52525b;
+  --accent:   #6d28d9;
+  --accent-h: #7c3aed;
+  --accent-l: #ede9fe;
+  --text:     #fafafa;
+  --text2:    #a1a1aa;
+  --text3:    #71717a;
+  --green:    #22c55e;
+  --red:      #ef4444;
+  --blue:     #3b82f6;
+  --r:        8px;
+  --r-sm:     5px;
+  --shadow:   0 4px 24px rgba(0,0,0,.5);
+}
+
+html { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- scrollbar ---- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 99px; }
+
+/* ---- topbar ---- */
+.topbar {
+  height: 52px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  backdrop-filter: blur(8px);
+}
+
+.topbar-logo {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.topbar-logo svg { flex-shrink: 0; }
+
+.topbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* breadcrumb inside topbar */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.breadcrumb-item a {
+  color: var(--text2);
+  text-decoration: none;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  transition: color .12s, background .12s;
+}
+.breadcrumb-item a:hover { color: var(--text); background: var(--bg3); }
+.breadcrumb-item.current span {
+  color: var(--text);
+  font-weight: 500;
+  padding: 2px 6px;
+}
+.breadcrumb-sep { color: var(--text3); font-size: 11px; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ---- buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background .12s, color .12s, border-color .12s;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-primary   { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-h); }
+.btn-ghost     { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+.btn-danger    { background: transparent; color: var(--red); border: 1px solid transparent; }
+.btn-danger:hover { background: rgba(239,68,68,.1); border-color: var(--red); }
+.btn-sm { height: 26px; padding: 0 10px; font-size: 12px; }
+
+/* ---- search ---- */
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 360px;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  height: 32px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0 10px 0 32px;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .12s;
+}
+.search-input::placeholder { color: var(--text3); }
+.search-input:focus { border-color: var(--accent); }
+
+/* ---- sidebar + layout ---- */
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg1);
+  border-right: 1px solid var(--border);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  padding: 0 8px;
+  margin: 8px 0 4px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--r-sm);
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  transition: background .1s, color .1s;
+}
+.sidebar-item:hover { background: var(--bg3); color: var(--text); }
+.sidebar-item.active { background: rgba(109,40,217,.15); color: var(--accent-l); }
+.sidebar-item svg { flex-shrink: 0; }
+
+/* ---- main content ---- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: auto;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.toolbar-left  { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.toolbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ---- upload drop zone ---- */
+.upload-zone {
+  margin: 0 20px 0;
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--r);
+  padding: 20px 24px;
+  background: var(--bg2);
+  transition: border-color .15s, background .15s;
+}
+.upload-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(109,40,217,.06);
+}
+.upload-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.upload-file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .1s, color .1s;
+}
+.upload-file-label:hover { background: var(--border); color: var(--text); }
+input[type=file] { display: none; }
+.upload-chosen {
+  font-size: 13px;
+  color: var(--text2);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upload-hint {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 8px;
+}
+
+/* ---- file grid / table ---- */
+.file-container {
+  padding: 16px 20px;
+  flex: 1;
+}
+
+/* table view */
+.file-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.file-table thead th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.file-table thead th:hover { color: var(--text2); }
+.file-table thead th.sort-asc::after  { content: " ^"; }
+.file-table thead th.sort-desc::after { content: " v"; }
+
+.file-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .08s;
+}
+.file-table tbody tr:last-child { border-bottom: none; }
+.file-table tbody tr:hover { background: var(--bg2); }
+.file-table tbody tr:hover .row-actions { opacity: 1; }
+
+.file-table td {
+  padding: 9px 12px;
+  vertical-align: middle;
+}
+
+.cell-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.file-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: .2px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+/* type colors */
+.type-dir  { background: rgba(109,40,217,.18); color: #c4b5fd; }
+.type-img  { background: rgba(34,197,94,.15);  color: #86efac; }
+.type-vid  { background: rgba(239,68,68,.15);  color: #fca5a5; }
+.type-aud  { background: rgba(249,115,22,.15); color: #fdba74; }
+.type-doc  { background: rgba(59,130,246,.15); color: #93c5fd; }
+.type-zip  { background: rgba(234,179,8,.15);  color: #fde047; }
+.type-src  { background: rgba(20,184,166,.15); color: #5eead4; }
+.type-cfg  { background: rgba(156,163,175,.15);color: #d1d5db; }
+.type-file { background: var(--bg3);           color: var(--text3); }
+
+.file-name-link {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 450;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color .1s;
+}
+.file-name-link:hover { color: #c4b5fd; }
+
+.cell-size, .cell-date {
+  color: var(--text3);
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  opacity: 0;
+  transition: opacity .1s;
+}
+
+/* ---- empty state ---- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 12px;
+  color: var(--text3);
+}
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.empty-state p { font-size: 14px; color: var(--text2); }
+.empty-state span { font-size: 12px; }
+
+/* ---- status bar ---- */
+.statusbar {
+  height: 28px;
+  background: var(--bg1);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.statusbar-item { display: flex; align-items: center; gap: 5px; }
+.statusbar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.statusbar-sep { color: var(--border2); }
+
+/* ---- toast ---- */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: var(--r);
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+/* ---- password indicator ---- */
+.lock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+}
+
+/* ---- responsive ---- */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .cell-date { display: none; }
+}
+@media (max-width: 560px) {
+  .cell-size { display: none; }
+  .topbar { padding: 0 12px; }
+  .file-container { padding: 10px 12px; }
+  .toolbar { padding: 10px 12px; }
+}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">ShareDrop</div>
-  <div class="header-actions">
-    <span class="stats" id="fileCount"></span>
+
+<!-- topbar -->
+<header class="topbar">
+  <a href="/" class="topbar-logo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    ShareDrop
+  </a>
+  <div class="topbar-sep"></div>
+  <nav class="breadcrumb">
+    <div class="breadcrumb-item">
+      <a href="/">{{.RootName}}</a>
+    </div>
+    {{range .Breadcrumbs}}
+    <span class="breadcrumb-sep">›</span>
+    <div class="breadcrumb-item">
+      <a href="/?path={{.Path}}">{{.Name}}</a>
+    </div>
+    {{end}}
+  </nav>
+  <div class="topbar-right">
     {{if .PasswordSet}}
-    <a href="/logout" class="btn btn-ghost">Logout</a>
+    <span class="lock-badge">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Protected
+    </span>
+    <a href="/logout" class="btn btn-ghost btn-sm">Logout</a>
     {{end}}
   </div>
 </header>
 
-<div class="container">
-  <div class="breadcrumb">
-    <a href="/">{{.RootName}}</a>
+<div class="layout">
+  <!-- sidebar -->
+  <aside class="sidebar">
+    <span class="sidebar-label">Navigate</span>
+    <a href="/" class="sidebar-item {{if eq .CurrentPath "."}}active{{end}}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Root
+    </a>
     {{range .Breadcrumbs}}
-    <span class="sep">/</span>
-    <a href="/?path={{.Path}}">{{.Name}}</a>
+    <a href="/?path={{.Path}}" class="sidebar-item">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      {{.Name}}
+    </a>
     {{end}}
-  </div>
 
-  <div class="toolbar">
-    <input class="search-box" type="text" id="searchBox" placeholder="Search files..." oninput="filterFiles()">
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      {{if .AllowUpload}}
-      <button class="btn btn-primary" onclick="toggleUpload()">Upload</button>
+    <span class="sidebar-label" style="margin-top:16px">Actions</span>
+    {{if .AllowUpload}}
+    <button class="sidebar-item" onclick="toggleUpload()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Upload files
+    </button>
+    {{end}}
+    <a href="/api/files?path={{.CurrentPath}}" class="sidebar-item" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      JSON API
+    </a>
+  </aside>
+
+  <!-- main -->
+  <div class="main">
+    <!-- toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="search-wrap">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" id="searchInput" type="text" placeholder="Search in this folder..." oninput="filterFiles()" autocomplete="off">
+        </div>
+      </div>
+      <div class="toolbar-right">
+        {{if .AllowUpload}}
+        <button class="btn btn-primary btn-sm" onclick="toggleUpload()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M20 21H4"/></svg>
+          Upload
+        </button>
+        {{end}}
+      </div>
+    </div>
+
+    <!-- upload zone -->
+    {{if .AllowUpload}}
+    <div id="uploadZone" style="padding: 0 20px; margin-top: 14px; display: none;">
+      <div class="upload-zone" id="dropZone"
+           ondragover="onDragOver(event)"
+           ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event)">
+        <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
+          <input type="hidden" name="path" value="{{.CurrentPath}}">
+          <div class="upload-form-row">
+            <label class="upload-file-label" for="fileInput">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Choose files
+            </label>
+            <input type="file" id="fileInput" name="files" multiple onchange="onFileChange()">
+            <span class="upload-chosen" id="uploadChosen">No files selected</span>
+            <button type="submit" class="btn btn-primary btn-sm">Upload now</button>
+          </div>
+          <p class="upload-hint">Or drag and drop files anywhere in this box</p>
+        </form>
+      </div>
+    </div>
+    {{end}}
+
+    <!-- file list -->
+    <div class="file-container">
+      {{if .Files}}
+      <table class="file-table" id="fileTable">
+        <thead>
+          <tr>
+            <th onclick="sortBy('name')" id="th-name">Name</th>
+            <th onclick="sortBy('size')" id="th-size" style="width:90px">Size</th>
+            <th onclick="sortBy('date')" id="th-date" style="width:140px">Modified</th>
+            <th style="width:120px; cursor:default; text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="fileList">
+          {{range .Files}}
+          <tr class="file-row"
+              data-name="{{.Name}}"
+              data-size="{{.RawSize}}"
+              data-date="{{.ModTime}}"
+              data-isdir="{{.IsDir}}">
+            <td>
+              <div class="cell-name">
+                <span class="file-type-badge {{typeClass .Icon}}">{{typeLabel .Icon}}</span>
+                {{if .IsDir}}
+                <a class="file-name-link" href="/?path={{.Path}}">{{.Name}}</a>
+                {{else}}
+                <a class="file-name-link" href="/download?path={{.Path}}">{{.Name}}</a>
+                {{end}}
+              </div>
+            </td>
+            <td class="cell-size">{{if .IsDir}}--{{else}}{{.Size}}{{end}}</td>
+            <td class="cell-date">{{.ModTime}}</td>
+            <td>
+              <div class="row-actions">
+                {{if .IsDir}}
+                <a href="/zip?path={{.Path}}" class="btn btn-ghost btn-sm">ZIP</a>
+                {{else}}
+                <a href="/download?path={{.Path}}" class="btn btn-ghost btn-sm">Download</a>
+                {{end}}
+                {{if $.AllowDelete}}
+                <form method="POST" action="/delete" style="display:contents"
+                      onsubmit="return confirm('Delete &quot;{{.Name}}&quot;?')">
+                  <input type="hidden" name="path" value="{{.Path}}">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+                {{end}}
+              </div>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{else}}
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" color="#52525b"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <p>This folder is empty</p>
+        {{if .AllowUpload}}
+        <span>Drop files here or click Upload to add files</span>
+        {{end}}
+      </div>
       {{end}}
     </div>
-  </div>
 
-  {{if .AllowUpload}}
-  <div id="uploadZone" class="upload-zone" style="display:none"
-       ondragover="event.preventDefault();this.classList.add('dragover')"
-       ondragleave="this.classList.remove('dragover')"
-       ondrop="handleDrop(event)">
-    <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
-      <input type="hidden" name="path" value="{{.CurrentPath}}">
-      <div class="upload-zone-inner">
-        <label>
-          Choose files (or drag and drop)
-          <input type="file" name="files" id="fileInput" multiple onchange="updateFileChosen()">
-        </label>
-        <span class="file-chosen" id="fileChosen">No files selected</span>
-        <button type="submit" class="btn btn-primary">Upload</button>
+    <!-- status bar -->
+    <footer class="statusbar">
+      <div class="statusbar-item">
+        <span class="statusbar-dot"></span>
+        Running
       </div>
-    </form>
-  </div>
-  {{end}}
-
-  <div class="file-table">
-    {{if .Files}}
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Size</th>
-          <th>Modified</th>
-          <th style="text-align:right">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="fileList">
-        {{range .Files}}
-        <tr class="file-row" data-name="{{.Name}}">
-          <td>
-            <div class="file-name">
-              <span class="file-icon">{{.Icon}}</span>
-              {{if .IsDir}}
-              <a href="/?path={{.Path}}">{{.Name}}</a>
-              <span class="badge badge-dir">folder</span>
-              {{else}}
-              <a href="/download?path={{.Path}}">{{.Name}}</a>
-              {{end}}
-            </div>
-          </td>
-          <td class="file-size">{{if .IsDir}}--{{else}}{{.Size}}{{end}}</td>
-          <td class="file-date">{{.ModTime}}</td>
-          <td>
-            <div class="file-actions">
-              {{if .IsDir}}
-              <a href="/zip?path={{.Path}}" class="action-link zip-link">ZIP</a>
-              {{else}}
-              <a href="/download?path={{.Path}}" class="action-link dl">Download</a>
-              {{end}}
-              {{if $.AllowDelete}}
-              <form method="POST" action="/delete" style="display:inline" onsubmit="return confirm('Delete {{.Name}}?')">
-                <input type="hidden" name="path" value="{{.Path}}">
-                <button type="submit" class="action-link del">Delete</button>
-              </form>
-              {{end}}
-            </div>
-          </td>
-        </tr>
-        {{end}}
-      </tbody>
-    </table>
-    {{else}}
-    <div class="empty-state">This folder is empty</div>
-    {{end}}
+      <span class="statusbar-sep">|</span>
+      <span id="statusCount" class="statusbar-item"></span>
+      <span class="statusbar-sep">|</span>
+      <span class="statusbar-item">{{.RootName}}</span>
+    </footer>
   </div>
 </div>
 
-<div class="footer">
-  ShareDrop - local network file sharing &middot; <a href="/api/files?path={{.CurrentPath}}" style="color:var(--accent2)">JSON API</a>
+<!-- toast -->
+<div class="toast" id="toast">
+  <span class="toast-dot"></span>
+  <span id="toastMsg">Done!</span>
 </div>
-
-<div class="toast" id="toast">Done!</div>
 
 <script>
-function toggleUpload() {
-  var z = document.getElementById('uploadZone');
-  z.style.display = z.style.display === 'none' ? 'block' : 'none';
+// ---- template helpers exposed to JS ----
+var totalFiles = {{len .Files}};
+
+// ---- sort state ----
+var sortCol = 'name', sortDir = 1;
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  ['name','size','date'].forEach(function(c) {
+    var th = document.getElementById('th-' + c);
+    if (!th) return;
+    th.className = (c === col) ? (sortDir === 1 ? 'sort-asc' : 'sort-desc') : '';
+  });
+  var tbody = document.getElementById('fileList');
+  var rows  = Array.from(tbody.querySelectorAll('.file-row'));
+  rows.sort(function(a, b) {
+    // dirs always first
+    var ad = a.dataset.isdir === 'true', bd = b.dataset.isdir === 'true';
+    if (ad !== bd) return ad ? -1 : 1;
+    var av, bv;
+    if (col === 'size') {
+      av = parseInt(a.dataset.size) || 0;
+      bv = parseInt(b.dataset.size) || 0;
+      return (av - bv) * sortDir;
+    }
+    av = col === 'date' ? a.dataset.date : a.dataset.name.toLowerCase();
+    bv = col === 'date' ? b.dataset.date : b.dataset.name.toLowerCase();
+    return av < bv ? -sortDir : av > bv ? sortDir : 0;
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
 }
 
+// ---- search ----
 function filterFiles() {
-  var q = document.getElementById('searchBox').value.toLowerCase();
+  var q = document.getElementById('searchInput').value.toLowerCase();
   var rows = document.querySelectorAll('.file-row');
   var shown = 0;
   rows.forEach(function(r) {
-    var name = r.dataset.name.toLowerCase();
-    var match = name.includes(q);
+    var match = r.dataset.name.toLowerCase().includes(q);
     r.style.display = match ? '' : 'none';
     if (match) shown++;
   });
-  document.getElementById('fileCount').textContent = shown + ' item' + (shown !== 1 ? 's' : '');
+  document.getElementById('statusCount').textContent = shown + ' item' + (shown !== 1 ? 's' : '');
 }
 
-function updateFileChosen() {
+// ---- upload ----
+function toggleUpload() {
+  var z = document.getElementById('uploadZone');
+  if (!z) return;
+  z.style.display = z.style.display === 'none' ? 'block' : 'none';
+}
+
+function onFileChange() {
   var inp = document.getElementById('fileInput');
-  var span = document.getElementById('fileChosen');
-  if (inp.files.length === 0) {
-    span.textContent = 'No files selected';
-  } else if (inp.files.length === 1) {
-    span.textContent = inp.files[0].name;
-  } else {
-    span.textContent = inp.files.length + ' files selected';
-  }
+  var sp  = document.getElementById('uploadChosen');
+  if (!inp.files.length) sp.textContent = 'No files selected';
+  else if (inp.files.length === 1) sp.textContent = inp.files[0].name;
+  else sp.textContent = inp.files.length + ' files selected';
 }
 
-function handleDrop(e) {
+function onDragOver(e) {
   e.preventDefault();
-  document.querySelector('#uploadZone').classList.remove('dragover');
-  var input = document.getElementById('fileInput');
-  input.files = e.dataTransfer.files;
-  updateFileChosen();
+  document.getElementById('dropZone').classList.add('drag-over');
+}
+function onDragLeave(e) {
+  document.getElementById('dropZone').classList.remove('drag-over');
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  var inp = document.getElementById('fileInput');
+  inp.files = e.dataTransfer.files;
+  onFileChange();
   document.getElementById('uploadForm').submit();
 }
 
-window.addEventListener('DOMContentLoaded', function() {
-  var rows = document.querySelectorAll('.file-row');
-  document.getElementById('fileCount').textContent = rows.length + ' item' + (rows.length !== 1 ? 's' : '');
+// ---- toast ----
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ---- init ----
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('statusCount').textContent =
+    totalFiles + ' item' + (totalFiles !== 1 ? 's' : '');
 });
 </script>
+
 </body>
 </html>`
 
@@ -375,90 +786,111 @@ const loginTmpl = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ShareDrop - Login</title>
 <style>
-  :root {
-    --bg: #0f0f13;
-    --surface: #1a1a24;
-    --border: #2e2e4a;
-    --accent: #7c6af7;
-    --accent2: #a78bfa;
-    --text: #e2e0ff;
-    --text2: #9994cc;
-    --red: #f87171;
-    --radius: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 40px;
-    width: 100%;
-    max-width: 380px;
-    text-align: center;
-  }
-  h1 { font-size: 1.5rem; color: var(--accent2); margin-bottom: 6px; }
-  .subtitle { color: var(--text2); font-size: 0.9rem; margin-bottom: 28px; }
-  .form-group { margin-bottom: 16px; text-align: left; }
-  label { display: block; font-size: 0.85rem; color: var(--text2); margin-bottom: 6px; }
-  input[type=password] {
-    width: 100%;
-    background: #0f0f13;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 11px 14px;
-    color: var(--text);
-    font-size: 1rem;
-    outline: none;
-    transition: border 0.15s;
-  }
-  input[type=password]:focus { border-color: var(--accent); }
-  .btn {
-    width: 100%;
-    padding: 11px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s;
-    margin-top: 4px;
-  }
-  .btn:hover { background: var(--accent2); }
-  .error {
-    background: rgba(248,113,113,0.1);
-    border: 1px solid var(--red);
-    color: var(--red);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 0.85rem;
-    margin-bottom: 16px;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #09090b;
+  --bg1:     #111113;
+  --bg2:     #18181b;
+  --bg3:     #27272a;
+  --border:  #3f3f46;
+  --accent:  #6d28d9;
+  --accent-h:#7c3aed;
+  --text:    #fafafa;
+  --text2:   #a1a1aa;
+  --red:     #ef4444;
+  --r:       8px;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 360px;
+}
+.card-header {
+  margin-bottom: 28px;
+}
+.card-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r);
+  background: rgba(109,40,217,.2);
+  border: 1px solid rgba(109,40,217,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+h1 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.subtitle { font-size: 13px; color: var(--text2); }
+.form-group { margin-bottom: 14px; }
+label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+input[type=password] {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .12s;
+}
+input[type=password]:focus { border-color: var(--accent); }
+.btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--r);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s;
+  margin-top: 4px;
+}
+.btn:hover { background: var(--accent-h); }
+.error {
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.3);
+  color: var(--red);
+  border-radius: var(--r);
+  padding: 9px 12px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>ShareDrop</h1>
-  <p class="subtitle">This share is password protected</p>
+  <div class="card-header">
+    <div class="card-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h1>ShareDrop</h1>
+    <p class="subtitle">Enter your password to access this share</p>
+  </div>
   {{if .WrongPassword}}
-  <div class="error">Wrong password, try again.</div>
+  <div class="error">Incorrect password. Please try again.</div>
   {{end}}
   <form method="POST" action="/login">
     <div class="form-group">
-      <label>Password</label>
-      <input type="password" name="password" autofocus placeholder="Enter password...">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autofocus placeholder="Enter password...">
     </div>
-    <button type="submit" class="btn">Unlock</button>
+    <button type="submit" class="btn">Continue</button>
   </form>
 </div>
 </body>

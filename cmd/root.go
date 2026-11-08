@@ -90,6 +90,8 @@ func init() {
 	rootCmd.PersistentFlags().IntP("port", "p", 0, "Port to listen on (overrides config)")
 	rootCmd.PersistentFlags().StringP("dir", "d", "", "Directory to share (current dir if not set)")
 	rootCmd.PersistentFlags().BoolP("no-password", "n", false, "Skip password even if one is set")
+	rootCmd.PersistentFlags().BoolP("root", "r", false, "Share from filesystem root (e.g. C:\\ or /)")
+	rootCmd.PersistentFlags().String("root-path", "", "Share from a specific root path (overrides --root)")
 
 	rootCmd.AddCommand(setupCmd)
 	rootCmd.AddCommand(configCmd)
@@ -151,13 +153,23 @@ func runShare(cmd *cobra.Command, args []string) error {
 	}
 
 	shareDir, _ := cmd.Flags().GetString("dir")
-	if shareDir == "" {
+
+	// --root-path takes highest priority
+	if rootPath, _ := cmd.Flags().GetString("root-path"); rootPath != "" {
+		shareDir = rootPath
+		ui.Info("Sharing from custom root: " + rootPath)
+	} else if fromRoot, _ := cmd.Flags().GetBool("root"); fromRoot {
+		// share from filesystem root
+		shareDir = filesystemRoot()
+		ui.Warn("Sharing from filesystem root: " + shareDir)
+		ui.Dim("Anyone on your network can browse your entire drive.")
+		fmt.Println()
+	} else if shareDir == "" {
 		if len(args) > 0 {
 			shareDir = args[0]
 		} else if cfg.DefaultFolder != "" {
 			shareDir = cfg.DefaultFolder
 		} else {
-			// default to current directory
 			shareDir, _ = os.Getwd()
 		}
 	}
@@ -635,4 +647,17 @@ func removeFromPathUnix(dir string) (bool, error) {
 func isInstalledInPath() bool {
 	_, err := execCommand("sharedrop", "version")
 	return err == nil
+}
+
+// filesystemRoot returns the root of the filesystem depending on OS
+func filesystemRoot() string {
+	if runtime.GOOS == "windows" {
+		// get the drive where Windows is installed, fallback to C:\
+		systemDrive := os.Getenv("SystemDrive")
+		if systemDrive == "" {
+			systemDrive = "C:"
+		}
+		return systemDrive + "\\"
+	}
+	return "/"
 }

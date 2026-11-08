@@ -486,6 +486,35 @@ func fileIcon(name string) string {
 func renderTemplate(w http.ResponseWriter, tmplStr string, data interface{}) {
 	tmpl, err := template.New("page").Funcs(template.FuncMap{
 		"add": func(a, b int) int { return a + b },
+		// typeClass maps the icon code to a CSS class for coloring
+		"typeClass": func(icon string) string {
+			switch icon {
+			case "[dir]":
+				return "type-dir"
+			case "[img]":
+				return "type-img"
+			case "[vid]":
+				return "type-vid"
+			case "[aud]":
+				return "type-aud"
+			case "[pdf]", "[doc]", "[xls]", "[ppt]":
+				return "type-doc"
+			case "[zip]":
+				return "type-zip"
+			case "[src]":
+				return "type-src"
+			case "[cfg]":
+				return "type-cfg"
+			default:
+				return "type-file"
+			}
+		},
+		// typeLabel strips the brackets for display
+		"typeLabel": func(icon string) string {
+			s := strings.TrimPrefix(icon, "[")
+			s = strings.TrimSuffix(s, "]")
+			return s
+		},
 	}).Parse(tmplStr)
 	if err != nil {
 		http.Error(w, "Template error: "+err.Error(), 500)
