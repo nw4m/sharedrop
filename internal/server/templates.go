@@ -578,11 +578,8 @@ input[type=file] { display: none; }
 
     <!-- upload zone -->
     {{if .AllowUpload}}
-    <div id="uploadZone" style="padding: 0 20px; margin-top: 14px; display: none;">
-      <div class="upload-zone" id="dropZone"
-           ondragover="onDragOver(event)"
-           ondragleave="onDragLeave(event)"
-           ondrop="onDrop(event)">
+    <div id="uploadZone" style="padding: 12px 20px 0; display: none;">
+      <div class="upload-zone" id="dropZone">
         <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
           <input type="hidden" name="path" value="{{.CurrentPath}}">
           <div class="upload-form-row">
@@ -590,9 +587,9 @@ input[type=file] { display: none; }
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               Choose files
             </label>
-            <input type="file" id="fileInput" name="files" multiple onchange="onFileChange()">
+            <input type="file" id="fileInput" name="files" multiple>
             <span class="upload-chosen" id="uploadChosen">No files selected</span>
-            <button type="submit" class="btn btn-primary btn-sm">Upload now</button>
+            <button type="submit" id="uploadBtn" class="btn btn-primary btn-sm" disabled>Upload</button>
           </div>
           <p class="upload-hint">Or drag and drop files anywhere in this box</p>
         </form>
@@ -734,32 +731,74 @@ function filterFiles() {
 function toggleUpload() {
   var z = document.getElementById('uploadZone');
   if (!z) return;
-  z.style.display = z.style.display === 'none' ? 'block' : 'none';
+  var isHidden = z.style.display === 'none' || z.style.display === '';
+  z.style.display = isHidden ? 'block' : 'none';
 }
 
 function onFileChange() {
   var inp = document.getElementById('fileInput');
   var sp  = document.getElementById('uploadChosen');
-  if (!inp.files.length) sp.textContent = 'No files selected';
-  else if (inp.files.length === 1) sp.textContent = inp.files[0].name;
+  var btn = document.getElementById('uploadBtn');
+  if (!inp || !inp.files.length) {
+    if (sp)  sp.textContent = 'No files selected';
+    if (btn) btn.disabled = true;
+    return;
+  }
+  if (inp.files.length === 1) sp.textContent = inp.files[0].name;
   else sp.textContent = inp.files.length + ' files selected';
+  if (btn) btn.disabled = false;
 }
 
-function onDragOver(e) {
-  e.preventDefault();
-  document.getElementById('dropZone').classList.add('drag-over');
-}
-function onDragLeave(e) {
-  document.getElementById('dropZone').classList.remove('drag-over');
-}
-function onDrop(e) {
-  e.preventDefault();
-  document.getElementById('dropZone').classList.remove('drag-over');
+// wire up the file input change event here (not inline attr)
+document.addEventListener('DOMContentLoaded', function() {
+  // init status count
+  var sc = document.getElementById('statusCount');
+  if (sc) sc.textContent = totalFiles + ' item' + (totalFiles !== 1 ? 's' : '');
+
   var inp = document.getElementById('fileInput');
-  inp.files = e.dataTransfer.files;
-  onFileChange();
-  document.getElementById('uploadForm').submit();
-}
+  if (inp) inp.addEventListener('change', onFileChange);
+
+  // drag & drop on the whole drop zone
+  var dropZone = document.getElementById('dropZone');
+  if (dropZone) {
+    dropZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('drag-over');
+      var files = e.dataTransfer.files;
+      if (!files || !files.length) return;
+
+      // use FormData so we don't need to assign to input.files
+      var form = document.getElementById('uploadForm');
+      var fd = new FormData(form);
+      // remove old files key, add dropped files
+      fd.delete('files');
+      for (var i = 0; i < files.length; i++) fd.append('files', files[i]);
+
+      // show progress
+      var sp  = document.getElementById('uploadChosen');
+      var btn = document.getElementById('uploadBtn');
+      if (sp)  sp.textContent = 'Uploading ' + files.length + ' file' + (files.length > 1 ? 's' : '') + '...';
+      if (btn) btn.disabled = true;
+
+      fetch(form.action, { method: 'POST', body: fd })
+        .then(function() { window.location.reload(); })
+        .catch(function(err) {
+          if (sp) sp.textContent = 'Upload failed: ' + err.message;
+          if (btn) btn.disabled = false;
+        });
+    });
+  }
+});
 
 // ---- toast ----
 function showToast(msg) {
@@ -767,14 +806,7 @@ function showToast(msg) {
   document.getElementById('toastMsg').textContent = msg;
   t.classList.add('show');
   setTimeout(function() { t.classList.remove('show'); }, 2500);
-}
-
-// ---- init ----
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('statusCount').textContent =
-    totalFiles + ' item' + (totalFiles !== 1 ? 's' : '');
-});
-</script>
+}</script>
 
 </body>
 </html>`
