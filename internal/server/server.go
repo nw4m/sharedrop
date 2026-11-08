@@ -64,7 +64,6 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/static/", s.handleStatic)
 }
 
-// authMiddleware checks password if one is set
 func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !s.cfg.PasswordSet {
@@ -72,14 +71,12 @@ func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// check session cookie
 		cookie, err := r.Cookie("sd_session")
 		if err == nil && s.sessions.Valid(cookie.Value) {
 			next(w, r)
 			return
 		}
 
-		// redirect to login
 		http.Redirect(w, r, "/login?next="+r.URL.RequestURI(), http.StatusFound)
 	}
 }
@@ -104,7 +101,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 				Value:    token,
 				Path:     "/",
 				HttpOnly: true,
-				MaxAge:   86400 * 7, // 7 days
+				MaxAge:   86400 * 7,
 			})
 			next := r.FormValue("next")
 			if next == "" {
@@ -113,7 +110,6 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, next, http.StatusFound)
 			return
 		}
-		// wrong password
 		renderLogin(w, true)
 		return
 	}
@@ -141,7 +137,6 @@ func (s *Server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 		relPath = "."
 	}
 
-	// security: make sure we stay inside rootDir
 	absPath, err := s.safePath(relPath)
 	if err != nil {
 		http.Error(w, "Access denied", http.StatusForbidden)
@@ -154,7 +149,6 @@ func (s *Server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if it's a file, serve it directly
 	if !info.IsDir() {
 		http.ServeFile(w, r, absPath)
 		return
@@ -170,7 +164,6 @@ func (s *Server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 	for _, entry := range entries {
 		name := entry.Name()
 
-		// skip hidden files if config says so
 		if !s.cfg.ShowHidden && strings.HasPrefix(name, ".") {
 			continue
 		}
@@ -197,13 +190,12 @@ func (s *Server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 			finfo.Size = auth.FormatSize(fi.Size())
 			finfo.Icon = fileIcon(name)
 		} else {
-			finfo.Icon = "📁"
+			finfo.Icon = "[dir]"
 		}
 
 		files = append(files, finfo)
 	}
 
-	// dirs first, then files, both sorted by name
 	sort.Slice(files, func(i, j int) bool {
 		if files[i].IsDir != files[j].IsDir {
 			return files[i].IsDir
@@ -211,17 +203,16 @@ func (s *Server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 		return strings.ToLower(files[i].Name) < strings.ToLower(files[j].Name)
 	})
 
-	// build breadcrumbs
 	crumbs := buildBreadcrumbs(relPath)
 
 	data := map[string]interface{}{
-		"Files":        files,
-		"CurrentPath":  relPath,
-		"Breadcrumbs":  crumbs,
-		"AllowUpload":  s.cfg.AllowUpload,
-		"AllowDelete":  s.cfg.AllowDelete,
-		"PasswordSet":  s.cfg.PasswordSet,
-		"RootName":     filepath.Base(s.rootDir),
+		"Files":       files,
+		"CurrentPath": relPath,
+		"Breadcrumbs": crumbs,
+		"AllowUpload": s.cfg.AllowUpload,
+		"AllowDelete": s.cfg.AllowDelete,
+		"PasswordSet": s.cfg.PasswordSet,
+		"RootName":    filepath.Base(s.rootDir),
 	}
 
 	renderTemplate(w, browseTmpl, data)
@@ -283,7 +274,6 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		}
 		defer src.Close()
 
-		// sanitize filename
 		cleanName := filepath.Base(fileHeader.Filename)
 		destFile := filepath.Join(absDestDir, cleanName)
 
@@ -316,13 +306,12 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// never delete the root itself
 	if absPath == s.rootDir {
 		http.Error(w, "Cannot delete root", http.StatusForbidden)
 		return
 	}
 
-	os.Remove(absPath) // only removes empty dirs or files; intentionally not recursive
+	os.Remove(absPath)
 	parentPath := filepath.Dir(relPath)
 	http.Redirect(w, r, "/?path="+parentPath, http.StatusFound)
 }
@@ -367,7 +356,6 @@ func (s *Server) handleZip(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleAPIFiles returns a JSON list of files (useful for other apps or future features)
 func (s *Server) handleAPIFiles(w http.ResponseWriter, r *http.Request) {
 	relPath := r.URL.Query().Get("path")
 	if relPath == "" {
@@ -409,21 +397,17 @@ func (s *Server) handleAPIFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
-	// serve inline CSS/JS since we're embedding everything
 	http.NotFound(w, r)
 }
 
-// safePath resolves a relative path and makes sure it's inside rootDir
 func (s *Server) safePath(relPath string) (string, error) {
 	if relPath == "" || relPath == "." {
 		return s.rootDir, nil
 	}
 
-	// clean the path and join with root
 	clean := filepath.Clean(relPath)
 	abs := filepath.Join(s.rootDir, clean)
 
-	// make sure it's still inside root
 	rootAbs, _ := filepath.Abs(s.rootDir)
 	absClean, _ := filepath.Abs(abs)
 
@@ -467,35 +451,35 @@ func fileIcon(name string) string {
 	ext := strings.ToLower(filepath.Ext(name))
 	switch ext {
 	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico":
-		return "🖼️"
+		return "[img]"
 	case ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm":
-		return "🎬"
+		return "[vid]"
 	case ".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a":
-		return "🎵"
+		return "[aud]"
 	case ".pdf":
-		return "📄"
+		return "[pdf]"
 	case ".doc", ".docx":
-		return "📝"
+		return "[doc]"
 	case ".xls", ".xlsx":
-		return "📊"
+		return "[xls]"
 	case ".ppt", ".pptx":
-		return "📋"
+		return "[ppt]"
 	case ".zip", ".rar", ".tar", ".gz", ".7z":
-		return "🗜️"
+		return "[zip]"
 	case ".go", ".py", ".js", ".ts", ".java", ".c", ".cpp", ".rs", ".rb":
-		return "💻"
+		return "[src]"
 	case ".json", ".yaml", ".yml", ".xml", ".toml":
-		return "⚙️"
+		return "[cfg]"
 	case ".txt", ".md", ".log":
-		return "📃"
+		return "[txt]"
 	case ".exe", ".msi", ".deb", ".rpm", ".dmg", ".app":
-		return "⚙️"
+		return "[bin]"
 	default:
 		ext2 := mime.TypeByExtension(ext)
 		if strings.HasPrefix(ext2, "image/") {
-			return "🖼️"
+			return "[img]"
 		}
-		return "📄"
+		return "[file]"
 	}
 }
 

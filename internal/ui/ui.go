@@ -11,7 +11,6 @@ import (
 	"golang.org/x/term"
 )
 
-// color palette
 var (
 	styleBanner = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#a78bfa")).
@@ -54,7 +53,6 @@ var (
 			Foreground(lipgloss.Color("#a78bfa"))
 )
 
-// PrintBanner prints the ASCII art banner
 func PrintBanner() {
 	banner := `
  ____  _                    ____                
@@ -65,48 +63,40 @@ func PrintBanner() {
                                             |_|    `
 
 	fmt.Println(styleBanner.Render(banner))
-	fmt.Println(styleDim.Render("  v1.0.0 · Local Network File Sharing · Built with ❤️ in Go"))
+	fmt.Println(styleDim.Render("  v1.0.0 - Local Network File Sharing - Built with Go"))
 	fmt.Println()
 }
 
-// PrintSeparator prints a styled separator line
 func PrintSeparator() {
-	fmt.Println(styleDim.Render(strings.Repeat("─", 56)))
+	fmt.Println(styleDim.Render(strings.Repeat("-", 56)))
 }
 
-// Success prints a success message
 func Success(msg string) {
-	fmt.Println(styleSuccess.Render("  ✓ " + msg))
+	fmt.Println(styleSuccess.Render("  [ok] " + msg))
 }
 
-// Error prints an error message
 func Error(msg string) {
-	fmt.Println(styleError.Render("  ✗ " + msg))
+	fmt.Println(styleError.Render("  [err] " + msg))
 }
 
-// Warn prints a warning
 func Warn(msg string) {
-	fmt.Println(styleWarn.Render("  ⚠ " + msg))
+	fmt.Println(styleWarn.Render("  [!] " + msg))
 }
 
-// Info prints an info message
 func Info(msg string) {
-	fmt.Println(styleInfo.Render("  → " + msg))
+	fmt.Println(styleInfo.Render("  --> " + msg))
 }
 
-// Dim prints dimmed text
 func Dim(msg string) {
 	fmt.Println(styleDim.Render("    " + msg))
 }
 
-// Title prints a section title
 func Title(msg string) {
 	fmt.Println()
 	fmt.Println(styleTitle.Render("  " + msg))
-	fmt.Println(styleDim.Render("  " + strings.Repeat("─", len(msg)+2)))
+	fmt.Println(styleDim.Render("  " + strings.Repeat("-", len(msg)+2)))
 }
 
-// Prompt asks a yes/no question, returns true if yes
 func Prompt(question string) bool {
 	fmt.Print(styleHighlight.Render("  ? ") + question + styleDim.Render(" [y/N] ") + ": ")
 	reader := bufio.NewReader(os.Stdin)
@@ -115,7 +105,6 @@ func Prompt(question string) bool {
 	return answer == "y" || answer == "yes"
 }
 
-// PromptDefault asks y/n with a default of yes
 func PromptDefault(question string, defaultYes bool) bool {
 	hint := "[Y/n]"
 	if !defaultYes {
@@ -131,7 +120,6 @@ func PromptDefault(question string, defaultYes bool) bool {
 	return answer == "y" || answer == "yes"
 }
 
-// Input reads a text input from the user
 func Input(prompt string, defaultVal string) string {
 	if defaultVal != "" {
 		fmt.Print(styleHighlight.Render("  > ") + prompt + styleDim.Render(" ["+defaultVal+"]") + ": ")
@@ -147,13 +135,11 @@ func Input(prompt string, defaultVal string) string {
 	return val
 }
 
-// PasswordInput reads a password without echoing it
 func PasswordInput(prompt string) string {
-	fmt.Print(styleHighlight.Render("  🔑 ") + prompt + ": ")
+	fmt.Print(styleHighlight.Render("  > ") + prompt + ": ")
 	pass, err := term.ReadPassword(int(syscall.Stdin))
-	fmt.Println() // newline after hidden input
+	fmt.Println()
 	if err != nil {
-		// fallback to regular input if terminal doesn't support it
 		reader := bufio.NewReader(os.Stdin)
 		val, _ := reader.ReadString('\n')
 		return strings.TrimSpace(val)
@@ -161,25 +147,22 @@ func PasswordInput(prompt string) string {
 	return string(pass)
 }
 
-// PrintShareInfo prints the sharing box with URLs and QR code hint
 func PrintShareInfo(urls []string, folder string, passwordSet bool) {
 	fmt.Println()
-	fmt.Println(styleSuccess.Render("  ✓ ShareDrop is running!"))
+	fmt.Println(styleSuccess.Render("  ShareDrop is running!"))
 	fmt.Println()
 
-	// folder info
-	fmt.Println(styleInfo.Render("  📁 Sharing:") + " " + styleHighlight.Render(folder))
+	fmt.Println(styleInfo.Render("  Sharing:") + " " + styleHighlight.Render(folder))
 	fmt.Println()
 
-	// URLs
-	fmt.Println(styleInfo.Render("  🌐 Access URLs:"))
+	fmt.Println(styleInfo.Render("  Access URLs:"))
 	for _, url := range urls {
 		fmt.Println("     " + styleURLBox.Render(url))
 	}
 
 	if passwordSet {
 		fmt.Println()
-		fmt.Println(styleWarn.Render("  🔒 Password protection is enabled"))
+		fmt.Println(styleWarn.Render("  Password protection is enabled"))
 	}
 
 	fmt.Println()
@@ -189,22 +172,19 @@ func PrintShareInfo(urls []string, folder string, passwordSet bool) {
 	fmt.Println()
 }
 
-// PrintSetupHeader prints the first-run setup header
 func PrintSetupHeader() {
 	fmt.Println(styleBox.Render(
 		styleTitle.Render("First Run Setup") + "\n\n" +
-			styleDim.Render("Let's get ShareDrop configured.\nThis only runs once — settings are saved locally."),
+			styleDim.Render("Let's get ShareDrop configured.\nThis only runs once - settings are saved locally."),
 	))
 	fmt.Println()
 }
 
-// PrintStep prints a numbered setup step
 func PrintStep(n int, msg string) {
 	num := styleDim.Render(fmt.Sprintf("  [%d]", n))
 	fmt.Println(num + " " + styleTitle.Render(msg))
 }
 
-// PrintConfig prints a summary of current config
 func PrintConfig(port int, allowUpload, allowDelete, showHidden bool, maxMB int, passwordSet bool) {
 	fmt.Println()
 	fmt.Println(styleBox.Render(
@@ -226,7 +206,7 @@ func configRow(key, val string) string {
 
 func boolStr(b bool) string {
 	if b {
-		return "Yes ✓"
+		return "Yes"
 	}
 	return "No"
 }

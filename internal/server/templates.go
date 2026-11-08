@@ -1,12 +1,11 @@
 package server
 
-// browseTmpl is the main file browser HTML page
 const browseTmpl = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ShareDrop 📦</title>
+<title>ShareDrop</title>
 <style>
   :root {
     --bg: #0f0f13;
@@ -19,7 +18,6 @@ const browseTmpl = `<!DOCTYPE html>
     --text2: #9994cc;
     --green: #4ade80;
     --red: #f87171;
-    --orange: #fb923c;
     --radius: 10px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,7 +45,6 @@ const browseTmpl = `<!DOCTYPE html>
     gap: 10px;
     letter-spacing: -0.5px;
   }
-  .logo span { font-size: 1.6rem; }
   .header-actions { display: flex; gap: 10px; align-items: center; }
   .btn {
     padding: 7px 16px;
@@ -66,8 +63,6 @@ const browseTmpl = `<!DOCTYPE html>
   .btn-primary:hover { background: var(--accent2); }
   .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
   .btn-ghost:hover { background: var(--border); }
-  .btn-danger { background: #7f1d1d; color: var(--red); border: 1px solid var(--red); }
-  .btn-danger:hover { background: var(--red); color: white; }
   .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
   .breadcrumb {
     display: flex;
@@ -80,7 +75,6 @@ const browseTmpl = `<!DOCTYPE html>
   .breadcrumb a { color: var(--accent2); text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
   .breadcrumb .sep { color: var(--text2); }
-  .breadcrumb .current { color: var(--text2); }
   .toolbar {
     display: flex;
     align-items: center;
@@ -124,7 +118,19 @@ const browseTmpl = `<!DOCTYPE html>
   .file-name { display: flex; align-items: center; gap: 10px; }
   .file-name a { color: var(--text); text-decoration: none; font-weight: 500; }
   .file-name a:hover { color: var(--accent2); }
-  .file-icon { font-size: 1.2rem; min-width: 24px; text-align: center; }
+  .file-icon {
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 5px;
+    border-radius: 4px;
+    min-width: 38px;
+    text-align: center;
+    white-space: nowrap;
+  }
   .file-size { color: var(--text2); font-size: 0.85rem; white-space: nowrap; }
   .file-date { color: var(--text2); font-size: 0.85rem; white-space: nowrap; }
   .file-actions { display: flex; gap: 6px; justify-content: flex-end; }
@@ -146,8 +152,8 @@ const browseTmpl = `<!DOCTYPE html>
     text-align: center;
     padding: 60px 20px;
     color: var(--text2);
+    font-size: 0.9rem;
   }
-  .empty-state .icon { font-size: 4rem; margin-bottom: 16px; }
   .upload-zone {
     background: var(--surface);
     border: 2px dashed var(--border);
@@ -196,7 +202,6 @@ const browseTmpl = `<!DOCTYPE html>
     .container { padding: 12px; }
     header { padding: 10px 14px; }
   }
-  /* notification toast */
   .toast {
     position: fixed; bottom: 24px; right: 24px;
     background: var(--green); color: #052e16;
@@ -211,40 +216,35 @@ const browseTmpl = `<!DOCTYPE html>
 </head>
 <body>
 <header>
-  <div class="logo"><span>📦</span> ShareDrop</div>
+  <div class="logo">ShareDrop</div>
   <div class="header-actions">
     <span class="stats" id="fileCount"></span>
     {{if .PasswordSet}}
-    <a href="/logout" class="btn btn-ghost">🔓 Logout</a>
+    <a href="/logout" class="btn btn-ghost">Logout</a>
     {{end}}
   </div>
 </header>
 
 <div class="container">
-  <!-- Breadcrumb -->
   <div class="breadcrumb">
-    <a href="/">🏠 {{.RootName}}</a>
+    <a href="/">{{.RootName}}</a>
     {{range .Breadcrumbs}}
     <span class="sep">/</span>
     <a href="/?path={{.Path}}">{{.Name}}</a>
     {{end}}
   </div>
 
-  <!-- Toolbar -->
   <div class="toolbar">
-    <input class="search-box" type="text" id="searchBox" placeholder="🔍  Search files..." oninput="filterFiles()">
+    <input class="search-box" type="text" id="searchBox" placeholder="Search files..." oninput="filterFiles()">
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       {{if .AllowUpload}}
-      <button class="btn btn-primary" onclick="document.getElementById('uploadZone').style.display=document.getElementById('uploadZone').style.display==='none'?'block':'none'">
-        ⬆️ Upload
-      </button>
+      <button class="btn btn-primary" onclick="toggleUpload()">Upload</button>
       {{end}}
     </div>
   </div>
 
-  <!-- Upload zone -->
   {{if .AllowUpload}}
-  <div id="uploadZone" class="upload-zone" style="display:none" 
+  <div id="uploadZone" class="upload-zone" style="display:none"
        ondragover="event.preventDefault();this.classList.add('dragover')"
        ondragleave="this.classList.remove('dragover')"
        ondrop="handleDrop(event)">
@@ -252,17 +252,16 @@ const browseTmpl = `<!DOCTYPE html>
       <input type="hidden" name="path" value="{{.CurrentPath}}">
       <div class="upload-zone-inner">
         <label>
-          📎 Choose files (or drag & drop)
+          Choose files (or drag and drop)
           <input type="file" name="files" id="fileInput" multiple onchange="updateFileChosen()">
         </label>
         <span class="file-chosen" id="fileChosen">No files selected</span>
-        <button type="submit" class="btn btn-primary">Upload Now</button>
+        <button type="submit" class="btn btn-primary">Upload</button>
       </div>
     </form>
   </div>
   {{end}}
 
-  <!-- File table -->
   <div class="file-table">
     {{if .Files}}
     <table>
@@ -288,19 +287,19 @@ const browseTmpl = `<!DOCTYPE html>
               {{end}}
             </div>
           </td>
-          <td class="file-size">{{if .IsDir}}—{{else}}{{.Size}}{{end}}</td>
+          <td class="file-size">{{if .IsDir}}--{{else}}{{.Size}}{{end}}</td>
           <td class="file-date">{{.ModTime}}</td>
           <td>
             <div class="file-actions">
               {{if .IsDir}}
-              <a href="/zip?path={{.Path}}" class="action-link zip-link" title="Download as ZIP">🗜️ ZIP</a>
+              <a href="/zip?path={{.Path}}" class="action-link zip-link">ZIP</a>
               {{else}}
-              <a href="/download?path={{.Path}}" class="action-link dl" title="Download">⬇️ Download</a>
+              <a href="/download?path={{.Path}}" class="action-link dl">Download</a>
               {{end}}
               {{if $.AllowDelete}}
               <form method="POST" action="/delete" style="display:inline" onsubmit="return confirm('Delete {{.Name}}?')">
                 <input type="hidden" name="path" value="{{.Path}}">
-                <button type="submit" class="action-link del">🗑️</button>
+                <button type="submit" class="action-link del">Delete</button>
               </form>
               {{end}}
             </div>
@@ -310,28 +309,30 @@ const browseTmpl = `<!DOCTYPE html>
       </tbody>
     </table>
     {{else}}
-    <div class="empty-state">
-      <div class="icon">📂</div>
-      <div>This folder is empty</div>
-    </div>
+    <div class="empty-state">This folder is empty</div>
     {{end}}
   </div>
 </div>
 
 <div class="footer">
-  ShareDrop — local network file sharing · <a href="/api/files?path={{.CurrentPath}}" style="color:var(--accent2)">JSON API</a>
+  ShareDrop - local network file sharing &middot; <a href="/api/files?path={{.CurrentPath}}" style="color:var(--accent2)">JSON API</a>
 </div>
 
-<div class="toast" id="toast">✓ Done!</div>
+<div class="toast" id="toast">Done!</div>
 
 <script>
+function toggleUpload() {
+  var z = document.getElementById('uploadZone');
+  z.style.display = z.style.display === 'none' ? 'block' : 'none';
+}
+
 function filterFiles() {
-  const q = document.getElementById('searchBox').value.toLowerCase();
-  const rows = document.querySelectorAll('.file-row');
-  let shown = 0;
-  rows.forEach(r => {
-    const name = r.dataset.name.toLowerCase();
-    const match = name.includes(q);
+  var q = document.getElementById('searchBox').value.toLowerCase();
+  var rows = document.querySelectorAll('.file-row');
+  var shown = 0;
+  rows.forEach(function(r) {
+    var name = r.dataset.name.toLowerCase();
+    var match = name.includes(q);
     r.style.display = match ? '' : 'none';
     if (match) shown++;
   });
@@ -339,8 +340,8 @@ function filterFiles() {
 }
 
 function updateFileChosen() {
-  const inp = document.getElementById('fileInput');
-  const span = document.getElementById('fileChosen');
+  var inp = document.getElementById('fileInput');
+  var span = document.getElementById('fileChosen');
   if (inp.files.length === 0) {
     span.textContent = 'No files selected';
   } else if (inp.files.length === 1) {
@@ -353,37 +354,26 @@ function updateFileChosen() {
 function handleDrop(e) {
   e.preventDefault();
   document.querySelector('#uploadZone').classList.remove('dragover');
-  const dt = e.dataTransfer;
-  const input = document.getElementById('fileInput');
-  input.files = dt.files;
+  var input = document.getElementById('fileInput');
+  input.files = e.dataTransfer.files;
   updateFileChosen();
-  // auto submit on drop
   document.getElementById('uploadForm').submit();
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// initial count
-window.addEventListener('DOMContentLoaded', () => {
-  const rows = document.querySelectorAll('.file-row');
+window.addEventListener('DOMContentLoaded', function() {
+  var rows = document.querySelectorAll('.file-row');
   document.getElementById('fileCount').textContent = rows.length + ' item' + (rows.length !== 1 ? 's' : '');
 });
 </script>
 </body>
 </html>`
 
-// loginTmpl is the password gate page
 const loginTmpl = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ShareDrop — Login</title>
+<title>ShareDrop - Login</title>
 <style>
   :root {
     --bg: #0f0f13;
@@ -415,7 +405,6 @@ const loginTmpl = `<!DOCTYPE html>
     max-width: 380px;
     text-align: center;
   }
-  .logo { font-size: 3rem; margin-bottom: 12px; }
   h1 { font-size: 1.5rem; color: var(--accent2); margin-bottom: 6px; }
   .subtitle { color: var(--text2); font-size: 0.9rem; margin-bottom: 28px; }
   .form-group { margin-bottom: 16px; text-align: left; }
@@ -459,18 +448,17 @@ const loginTmpl = `<!DOCTYPE html>
 </head>
 <body>
 <div class="card">
-  <div class="logo">🔒</div>
   <h1>ShareDrop</h1>
   <p class="subtitle">This share is password protected</p>
   {{if .WrongPassword}}
-  <div class="error">⚠️ Wrong password, try again.</div>
+  <div class="error">Wrong password, try again.</div>
   {{end}}
   <form method="POST" action="/login">
     <div class="form-group">
       <label>Password</label>
       <input type="password" name="password" autofocus placeholder="Enter password...">
     </div>
-    <button type="submit" class="btn">🚀 Unlock</button>
+    <button type="submit" class="btn">Unlock</button>
   </form>
 </div>
 </body>
