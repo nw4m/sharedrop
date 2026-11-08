@@ -1,0 +1,12 @@
+# built binaries
+sharedrop
+sharedrop.exe
+dist/
+
+# editor stuff
+.vscode/
+.idea/
+*.swp
+
+# go stuff
+vendor/
